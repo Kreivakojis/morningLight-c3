@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>MorningLight-Mini</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>MorningLight-Mini</h1>
+            <div id="status-indicator" class="status-dot"></div>
+        </header>
+
+        <nav>
+            <button class="nav-btn active" data-page="home">Home</button>
+            <button class="nav-btn" data-page="alarms">Alarms</button>
+            <button class="nav-btn" data-page="animation">Animation</button>
+            <button class="nav-btn" data-page="settings">Settings</button>
+        </nav>
+
+        <!-- Home Page -->
+        <section id="page-home" class="page active">
+            <div class="card">
+                <h2>Status</h2>
+                <div class="status-grid">
+                    <div class="status-item">
+                        <span class="label">WiFi</span>
+                        <span id="wifi-status" class="value">--</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">Time</span>
+                        <span id="time-display" class="value">--:--</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">Sunrise</span>
+                        <span id="sunrise-status" class="value">--</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">Brightness</span>
+                        <span id="brightness-display" class="value">0%</span>
+                    </div>
+                </div>
+                <div id="dark-mode-banner" class="dark-mode-banner" style="display:none">Dark Mode Active</div>
+            </div>
+
+            <div class="card">
+                <h2>Quick Test</h2>
+                <div class="form-group">
+                    <label>Color Temperature</label>
+                    <input type="range" id="test-color-temp" min="0" max="100" value="50">
+                    <span id="test-color-temp-val">3600K</span>
+                </div>
+                <div class="form-group">
+                    <label>Brightness</label>
+                    <input type="range" id="test-brightness" min="0" max="100" step="10" value="50">
+                    <span id="test-brightness-val">50%</span>
+                </div>
+                <div class="btn-row">
+                    <button id="btn-apply-test" class="btn btn-primary">Apply</button>
+                    <button id="btn-off" class="btn">Off</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Alarms Page -->
+        <section id="page-alarms" class="page">
+            <div class="card">
+                <h2>Alarms</h2>
+                <div id="alarm-list"></div>
+                <button id="btn-add-alarm" class="btn btn-primary btn-full">Add Alarm</button>
+            </div>
+
+            <!-- Dark Mode Schedules -->
+            <div class="card">
+                <h2>Dark Mode</h2>
+                <p class="hint">No-light windows. Takes priority over all alarms and animations.</p>
+                <div id="darkmode-list"></div>
+                <button id="btn-add-darkmode" class="btn btn-full">Add Schedule</button>
+            </div>
+
+            <!-- Dark Mode Editor Modal -->
+            <div id="darkmode-modal" class="modal">
+                <div class="modal-content">
+                    <h3 id="darkmode-modal-title">Edit Dark Mode</h3>
+                    <form id="darkmode-form">
+                        <input type="hidden" id="darkmode-id">
+                        <div class="form-group">
+                            <label>Start Time</label>
+                            <div class="time-picker">
+                                <input type="number" id="darkmode-start-hour" min="0" max="23" value="22">
+                                <span>:</span>
+                                <input type="number" id="darkmode-start-minute" min="0" max="59" value="0">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>End Time</label>
+                            <div class="time-picker">
+                                <input type="number" id="darkmode-end-hour" min="0" max="23" value="6">
+                                <span>:</span>
+                                <input type="number" id="darkmode-end-minute" min="0" max="59" value="0">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Days</label>
+                            <div class="day-picker" id="darkmode-days">
+                                <label><input type="checkbox" data-day="0"> Su</label>
+                                <label><input type="checkbox" data-day="1" checked> Mo</label>
+                                <label><input type="checkbox" data-day="2" checked> Tu</label>
+                                <label><input type="checkbox" data-day="3" checked> We</label>
+                                <label><input type="checkbox" data-day="4" checked> Th</label>
+                                <label><input type="checkbox" data-day="5" checked> Fr</label>
+                                <label><input type="checkbox" data-day="6"> Sa</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="darkmode-override">
+                                Allow Override
+                            </label>
+                            <span class="hint">When checked, lights can still operate during this window</span>
+                        </div>
+                        <div class="btn-row">
+                            <button type="button" id="btn-darkmode-delete" class="btn btn-danger">Delete</button>
+                            <button type="button" id="btn-darkmode-cancel" class="btn">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Alarm Editor Modal -->
+            <div id="alarm-modal" class="modal">
+                <div class="modal-content">
+                    <h3 id="alarm-modal-title">Edit Alarm</h3>
+                    <form id="alarm-form">
+                        <input type="hidden" id="alarm-id">
+                        <div class="form-group">
+                            <label>Name (optional)</label>
+                            <input type="text" id="alarm-name" maxlength="15" placeholder="e.g. Weekday">
+                        </div>
+                        <div class="form-group">
+                            <label>Time</label>
+                            <div class="time-picker time-picker-large">
+                                <input type="number" id="alarm-hour" min="0" max="23" value="7">
+                                <span>:</span>
+                                <input type="number" id="alarm-minute" min="0" max="59" value="0">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Duration (minutes)</label>
+                            <input type="range" id="alarm-duration" min="5" max="60" value="30">
+                            <span id="alarm-duration-val">30 min</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Days</label>
+                            <div class="day-picker">
+                                <label><input type="checkbox" data-day="0"> Su</label>
+                                <label><input type="checkbox" data-day="1" checked> Mo</label>
+                                <label><input type="checkbox" data-day="2" checked> Tu</label>
+                                <label><input type="checkbox" data-day="3" checked> We</label>
+                                <label><input type="checkbox" data-day="4" checked> Th</label>
+                                <label><input type="checkbox" data-day="5" checked> Fr</label>
+                                <label><input type="checkbox" data-day="6"> Sa</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Color Temperature (K)</label>
+                            <div class="color-temp-row">
+                                <div>
+                                    <span class="hint">Start</span>
+                                    <input type="number" id="alarm-color-start" min="2000" max="6500" step="100" value="2000">
+                                </div>
+                                <span class="color-temp-arrow">&rarr;</span>
+                                <div>
+                                    <span class="hint">End</span>
+                                    <input type="number" id="alarm-color-end" min="2000" max="6500" step="100" value="3000">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Brightness Curve</label>
+                            <select id="alarm-brightness-curve">
+                                <option value="0">Logarithmic</option>
+                                <option value="1">Inverse Logarithmic</option>
+                                <option value="2">Linear</option>
+                                <option value="3">Sigmoid</option>
+                                <option value="4">Exponential</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Max Brightness</label>
+                            <input type="range" id="alarm-brightness" min="10" max="100" value="100">
+                            <span id="alarm-brightness-val">100%</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Sunrise Animation</label>
+                            <select id="alarm-animation-preset">
+                                <option value="-1">Classic (uniform brightness)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Auto Turn-Off</label>
+                            <input type="range" id="alarm-cooldown" min="0" max="60" value="0">
+                            <span id="alarm-cooldown-val">Off</span>
+                        </div>
+                        <div class="btn-row">
+                            <button type="button" id="btn-alarm-delete" class="btn btn-danger">Delete</button>
+                            <button type="button" id="btn-alarm-cancel" class="btn">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- Animation Page -->
+        <section id="page-animation" class="page">
+            <div class="card">
+                <h2>Wave Animation</h2>
+                <div class="wave-preview">
+                    <canvas id="wave-canvas"></canvas>
+                </div>
+                <div class="form-group">
+                    <label>Preset</label>
+                    <select id="anim-preset">
+                        <option value="0">Gentle</option>
+                        <option value="1">Ocean</option>
+                        <option value="2">Custom 3</option>
+                        <option value="3">Custom 4</option>
+                        <option value="4">Custom 5</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" id="anim-name" maxlength="11" value="Gentle">
+                </div>
+                <div class="form-group">
+                    <label>Waveform</label>
+                    <select id="anim-waveform">
+                        <option value="0">Sine</option>
+                        <option value="1">Hyperbolic AC</option>
+                        <option value="2">Hyperbolic Pulse</option>
+                    </select>
+                </div>
+                <div class="form-group" id="anim-wave-k-group" style="display:none">
+                    <label>Zero-Crossing Sharpness (k)</label>
+                    <input type="range" id="anim-wave-k" min="5" max="200" value="100">
+                    <span id="anim-wave-k-val">10.0</span>
+                    <p class="hint">Low = gentler, sine-like. High = narrow spikes with long flat zero regions.</p>
+                </div>
+                <div class="form-group" id="anim-wave-i-group" style="display:none">
+                    <label>Crest Shape (i)</label>
+                    <input type="range" id="anim-wave-i" min="2" max="40" value="20">
+                    <span id="anim-wave-i-val">2.0</span>
+                    <p class="hint">2.0 = spikes peak at full amplitude. Above 2.0, spikes overshoot and flat-top; below 2.0, spikes stay shorter than full amplitude.</p>
+                </div>
+                <div class="form-group">
+                    <label>Wavelength (LEDs)</label>
+                    <input type="range" id="anim-wavelength" min="2" max="100" value="30">
+                    <span id="anim-wavelength-val">30</span>
+                </div>
+                <div class="form-group">
+                    <label>Amplitude</label>
+                    <input type="range" id="anim-amplitude" min="0" max="100" step="10" value="50">
+                    <span id="anim-amplitude-val">50%</span>
+                </div>
+                <div class="form-group">
+                    <label>Speed</label>
+                    <input type="range" id="anim-speed" min="0" max="100" value="50">
+                    <span id="anim-speed-val">0.50 Hz</span>
+                </div>
+                <div class="form-group">
+                    <label>Base Brightness</label>
+                    <input type="range" id="anim-base" min="0" max="100" step="1" value="69">
+                    <span id="anim-base-val">50%</span>
+                    <p class="hint">The first half of the slider covers 0-20% for finer control near dark; the second half covers 20-100%.</p>
+                </div>
+                <div class="form-group">
+                    <label>Variation</label>
+                    <input type="range" id="anim-variation" min="0" max="100" step="10" value="20">
+                    <span id="anim-variation-val">20%</span>
+                </div>
+                <div class="form-group">
+                    <label>Color Temperature</label>
+                    <input type="range" id="anim-color-temp" min="0" max="100" value="50">
+                    <span id="anim-color-temp-val">3000K</span>
+                </div>
+                <div class="btn-row">
+                    <button id="anim-save" class="btn">Save Preset</button>
+                </div>
+                <div class="btn-row" style="margin-top:10px">
+                    <button id="anim-start" class="btn btn-primary">Start</button>
+                    <button id="anim-stop" class="btn">Stop</button>
+                </div>
+                <div id="anim-status" class="status-item" style="margin-top:15px;text-align:center">
+                    <span class="label">Status:</span>
+                    <span id="anim-running" class="value">Stopped</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Settings Page -->
+        <section id="page-settings" class="page">
+            <!-- WiFi Setup -->
+            <div class="card collapsible collapsed" id="wifi-setup">
+                <h2>WiFi Setup</h2>
+                <div class="card-body">
+                    <div id="wifi-networks"></div>
+                    <button id="btn-scan" class="btn btn-full">Scan Networks</button>
+                    <button id="btn-manual-wifi" class="btn btn-full" style="margin-top:10px">Connect Manually</button>
+                    <div id="wifi-connect-form" style="display:none">
+                        <input type="text" id="wifi-ssid" placeholder="Network name">
+                        <input type="password" id="wifi-password" placeholder="Password">
+                        <button id="btn-connect" class="btn btn-primary btn-full">Connect</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Time Settings -->
+            <div class="card collapsible collapsed">
+                <h2>Time</h2>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>Timezone</label>
+                        <select id="timezone">
+                            <option value="UTC12">UTC-12</option>
+                            <option value="UTC11">UTC-11</option>
+                            <option value="UTC10">UTC-10</option>
+                            <option value="UTC9">UTC-9</option>
+                            <option value="UTC8">UTC-8</option>
+                            <option value="UTC7">UTC-7</option>
+                            <option value="UTC6">UTC-6</option>
+                            <option value="UTC5">UTC-5</option>
+                            <option value="UTC4">UTC-4</option>
+                            <option value="UTC3">UTC-3</option>
+                            <option value="UTC2">UTC-2</option>
+                            <option value="UTC1">UTC-1</option>
+                            <option value="UTC0" selected>UTC</option>
+                            <option value="UTC-1">UTC+1</option>
+                            <option value="UTC-2">UTC+2</option>
+                            <option value="UTC-3">UTC+3</option>
+                            <option value="UTC-4">UTC+4</option>
+                            <option value="UTC-5">UTC+5</option>
+                            <option value="UTC-6">UTC+6</option>
+                            <option value="UTC-7">UTC+7</option>
+                            <option value="UTC-8">UTC+8</option>
+                            <option value="UTC-9">UTC+9</option>
+                            <option value="UTC-10">UTC+10</option>
+                            <option value="UTC-11">UTC+11</option>
+                            <option value="UTC-12">UTC+12</option>
+                            <option value="UTC-13">UTC+13</option>
+                            <option value="UTC-14">UTC+14</option>
+                        </select>
+                    </div>
+                    <button id="btn-sync-time" class="btn btn-full">Sync Time Now</button>
+                </div>
+            </div>
+
+            <!-- LED Settings -->
+            <div class="card collapsible collapsed">
+                <h2>LED Configuration</h2>
+                <div class="card-body">
+                    <div class="form-group output-slot">
+                        <label><input type="checkbox" id="ws1-enabled"> Addressable Strip</label>
+                        <input type="number" id="ws1-led-count" min="1" max="300" value="30">
+                    </div>
+                    <div class="form-group">
+                        <label>Animation Frame Rate</label>
+                        <select id="anim-fps">
+                            <option value="30">30 FPS</option>
+                            <option value="60">60 FPS</option>
+                        </select>
+                        <p class="hint">Wave animation/sunrise update rate. 60 FPS is smoother but roughly doubles SPI output and compute load on the LED task.</p>
+                    </div>
+                    <div class="form-group">
+                        <label>Gamma Correction</label>
+                        <input type="range" id="gamma" min="10" max="40" value="22">
+                        <span id="gamma-val">2.2</span>
+                    </div>
+                    <div class="form-group">
+                        <label><input type="checkbox" id="dither-enabled"> Temporal Dithering (experimental)</label>
+                        <p class="hint">Smooths 8-bit stepping on the animated strip at low brightness/warm color, but subtly alters wave animation timing. Off by default.</p>
+                    </div>
+                    <div class="form-group">
+                        <label>Dither Update Frequency</label>
+                        <input type="range" id="dither-freq-hz" min="1" max="60" value="10">
+                        <span id="dither-freq-hz-val">10 Hz</span>
+                        <p class="hint">How often the dither step updates. Lower = slower toggling between adjacent output levels (less shimmer); higher approaches the ~30 Hz animation frame rate.</p>
+                    </div>
+                    <div class="form-group">
+                        <label>Dither Brightness Ceiling</label>
+                        <input type="range" id="dither-max-brightness" min="0" max="100" value="50">
+                        <span id="dither-max-brightness-val">50%</span>
+                        <p class="hint">Dithering only applies to LEDs at or below this brightness. Above it, output is plain-rounded with no dithering.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- General Settings -->
+            <div class="card collapsible collapsed">
+                <h2>General</h2>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label>Max Brightness Limit</label>
+                        <input type="range" id="max-brightness" min="10" max="100" value="100">
+                        <span id="max-brightness-val">100%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MQTT Settings -->
+            <div class="card collapsible collapsed">
+                <h2>MQTT</h2>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="mqtt-enabled">
+                            Enable MQTT
+                        </label>
+                    </div>
+                    <div id="mqtt-settings" style="display:none">
+                        <div class="form-group">
+                            <label>Broker URI</label>
+                            <input type="text" id="mqtt-broker" placeholder="mqtt://192.168.1.100:1883">
+                        </div>
+                        <div class="form-group">
+                            <label>Username (optional)</label>
+                            <input type="text" id="mqtt-username" placeholder="">
+                        </div>
+                        <div class="form-group">
+                            <label>Password (optional)</label>
+                            <input type="password" id="mqtt-password" placeholder="Leave blank to keep current">
+                        </div>
+                        <div class="form-group">
+                            <label>Topic Prefix</label>
+                            <input type="text" id="mqtt-prefix" placeholder="morninglight" maxlength="31">
+                        </div>
+                        <div class="form-group">
+                            <label>Device Name (HA display)</label>
+                            <input type="text" id="mqtt-device-name" placeholder="MorningLight-Mini" maxlength="31">
+                        </div>
+                        <div class="status-item" style="margin-top:10px">
+                            <span class="label">Status:</span>
+                            <span id="mqtt-status" class="value">--</span>
+                        </div>
+                    </div>
+                    <button id="btn-save-mqtt" class="btn btn-primary btn-full" style="margin-top:10px">Save MQTT</button>
+                </div>
+            </div>
+
+            <!-- Configuration Export/Import -->
+            <div class="card collapsible collapsed">
+                <h2>Configuration</h2>
+                <div class="card-body">
+                    <p class="hint">Export or import device settings as a JSON file.</p>
+                    <div class="btn-row">
+                        <button id="btn-export-config" class="btn btn-full">Export Config</button>
+                    </div>
+                    <div class="btn-row" style="margin-top:10px">
+                        <label class="btn btn-full" style="text-align:center;cursor:pointer">
+                            Import Config
+                            <input type="file" id="file-import-config" accept=".json,application/json,text/plain" style="display:none">
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System (not collapsible) -->
+            <div class="card">
+                <h2>System</h2>
+                <button id="btn-save-settings" class="btn btn-primary btn-full">Save Settings</button>
+                <button id="btn-reboot" class="btn btn-danger btn-full" style="margin-top:10px">Reboot Device</button>
+                <button id="btn-factory-reset" class="btn btn-danger btn-full" style="margin-top:10px">Factory Reset</button>
+            </div>
+        </section>
+    </div>
+
+    <script src="/app.js"></script>
+</body>
+</html>

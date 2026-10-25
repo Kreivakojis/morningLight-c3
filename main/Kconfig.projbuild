@@ -1,0 +1,194 @@
+menu "MorningLight-Mini Configuration"
+
+    menu "GPIO Configuration"
+        config ML_GPIO_WS1_DATA
+            int "Addressable Strip Data GPIO"
+            default 4
+            help
+                GPIO pin for the addressable LED strip data (WS2811 etc).
+
+        config ML_GPIO_WS1_ENABLE
+            int "Addressable Strip Enable GPIO"
+            default 5
+            help
+                GPIO pin driving the low-side N-channel MOSFET that gates
+                the strip's ground return (power-gate on/off).
+
+        config ML_GPIO_BTN_RESET
+            int "Reset Button GPIO"
+            default 6
+            help
+                GPIO pin for reset button. ESP32-C3 Super Mini: avoid
+                GPIO0/2/8/9 (strapping pins) and GPIO18-21 (USB/UART0).
+
+        config ML_GPIO_BTN_SCENARIO
+            int "Scenario Button GPIO"
+            default 7
+            help
+                GPIO pin for scenario cycling button.
+
+        config ML_GPIO_STATUS_LED
+            int "Status LED GPIO"
+            default 10
+            help
+                GPIO pin for built-in status LED.
+    endmenu
+
+    menu "WiFi Configuration"
+        config ML_WIFI_AP_SSID_PREFIX
+            string "AP SSID Prefix"
+            default "MorningLight-Mini"
+            help
+                Prefix for the AP SSID. Device MAC suffix will be appended.
+
+        config ML_WIFI_AP_CHANNEL
+            int "AP WiFi Channel"
+            default 1
+            range 1 13
+            help
+                WiFi channel for AP mode.
+
+        config ML_WIFI_AP_MAX_CONN
+            int "AP Max Connections"
+            default 4
+            range 1 10
+            help
+                Maximum number of stations connected to AP.
+
+        config ML_WIFI_STA_RETRY_COUNT
+            int "STA Retry Count"
+            default 5
+            range 1 20
+            help
+                Number of times to retry connecting to WiFi in STA mode.
+
+        config ML_WIFI_FALLBACK_TIMEOUT_S
+            int "STA to AP Fallback Timeout (seconds)"
+            default 30
+            range 10 120
+            help
+                Seconds to wait before falling back to AP mode if STA fails.
+    endmenu
+
+    menu "LED Configuration"
+        config ML_LED_WS1_ENABLED_DEFAULT
+            bool "Addressable Strip Populated by Default"
+            default y
+            help
+                Whether the addressable strip is enabled out of the box.
+
+        config ML_LED_COUNT_DEFAULT
+            int "Default LED Count"
+            default 30
+            range 1 300
+            help
+                Default number of LEDs for the WS2811 strip.
+
+        config ML_LED_DITHER_ENABLED_DEFAULT
+            bool "Temporal Dithering Enabled by Default"
+            default n
+            help
+                Whether temporal error-diffusion dithering on the animated
+                WS2811 pixel path is enabled out of the box. Can smooth out
+                8-bit quantization stepping at low brightness/color
+                temperature, but subtly alters wave animation timing.
+                User-toggleable at runtime via the Settings page.
+
+        config ML_LED_DITHER_FREQ_HZ_DEFAULT
+            int "Temporal Dithering Update Frequency (Hz)"
+            default 10
+            range 1 60
+            help
+                How often the dithering error-diffusion step updates, in Hz.
+                Lower values reduce how often output can toggle between
+                adjacent 8-bit levels (less shimmer, coarser temporal
+                resolution); higher values approach the animation frame
+                rate for the smoothest time-averaged brightness. Only
+                takes effect when dithering is enabled.
+
+        config ML_LED_DITHER_MAX_BRIGHTNESS_PCT_DEFAULT
+            int "Temporal Dithering Brightness Ceiling (%)"
+            default 50
+            range 0 100
+            help
+                Dithering only applies to LEDs whose current animated
+                brightness is at or below this percentage; above it, output
+                is plain-rounded with no dithering. Keeps dithering confined
+                to the low end where 8-bit quantization stepping is
+                actually visible.
+
+        config ML_LED_GAMMA
+            string "Gamma Correction Value"
+            default "2.2"
+            help
+                Gamma value for perceptually uniform brightness.
+
+        config ML_LED_MAX_BRIGHTNESS
+            int "Maximum Brightness (%)"
+            default 100
+            range 10 100
+            help
+                Maximum LED brightness percentage.
+    endmenu
+
+    menu "NTP Configuration"
+        config ML_NTP_SERVER1
+            string "Primary NTP Server"
+            default "pool.ntp.org"
+            help
+                Primary NTP server for time sync.
+
+        config ML_NTP_SERVER2
+            string "Secondary NTP Server"
+            default "time.google.com"
+            help
+                Secondary NTP server for time sync.
+
+        config ML_NTP_SYNC_INTERVAL_H
+            int "NTP Sync Interval (hours)"
+            default 6
+            range 1 24
+            help
+                Hours between NTP sync attempts.
+
+        config ML_DEFAULT_TIMEZONE
+            string "Default Timezone"
+            default "UTC0"
+            help
+                Default POSIX timezone string.
+    endmenu
+
+    menu "Sunrise Configuration"
+        config ML_SUNRISE_DEFAULT_DURATION_MIN
+            int "Default Sunrise Duration (minutes)"
+            default 30
+            range 5 120
+            help
+                Default duration for sunrise simulation.
+
+        config ML_SUNRISE_UPDATE_INTERVAL_MS
+            int "Sunrise Update Interval (ms)"
+            default 100
+            range 50 1000
+            help
+                Milliseconds between brightness updates during sunrise.
+    endmenu
+
+    menu "Animation Configuration"
+        config ML_ANIM_FPS_DEFAULT
+            int "Animation Frame Rate Default (fps)"
+            default 30
+            range 10 60
+            help
+                Default animation/wave frame rate. Overridable at runtime
+                via Settings > LED Configuration > Animation Frame Rate
+                (30/60 fps choice).
+
+        config ML_ANIM_TASK_STACK_SIZE
+            int "Animation Task Stack Size"
+            default 4096
+            help
+                Stack size for the animation FreeRTOS task.
+    endmenu
+
+endmenu
