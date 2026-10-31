@@ -18,6 +18,17 @@ on) and far fewer ADC channels/GPIOs overall.
 
 ## Building
 
+**Use a stable ESP-IDF release (v5.4 confirmed working), not `master`.**
+Building this project against an ESP-IDF `master`/dev snapshot produced a
+softAP that started without errors in the logs but never actually
+broadcast (no beacon/probe/auth traffic reached a client, even at point-
+blank range) — a WiFi regression in that particular nightly's ESP32-C3
+path, not a hardware or antenna problem, not a config/code problem on this
+project's side. Re-building the exact same source against stable
+ESP-IDF v5.4 fixed it immediately — AP visible with good signal strength,
+clients connect and get a DHCP lease normally. Confirmed on real C3 Super
+Mini hardware.
+
 ```
 idf.py set-target esp32c3
 idf.py build
@@ -28,25 +39,22 @@ GPIO defaults (see `main/Kconfig.projbuild`) assume a C3 Super Mini board;
 adjust via `idf.py menuconfig` if your wiring differs. Avoid GPIO0/2/8/9
 (strapping pins) and GPIO18-21 (USB/UART0) for new assignments.
 
-## Known caveat: `led_strip` managed component needs a one-line patch
+Console output goes over the native USB-Serial-JTAG peripheral (the same
+port used for flashing — `CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y` in
+`sdkconfig.defaults`), since the C3 Super Mini has no separate USB-UART
+bridge chip exposing UART0.
 
-The `espressif/led_strip` package (v2.5.5, pulled automatically into
-`managed_components/`, which is gitignored and gets redownloaded on a clean
-build) has a pre-existing bug in its SPI backend: `src/led_strip_spi_dev.c`
-uses `MALLOC_CAP_*`/`heap_caps_calloc` without including
-`esp_heap_caps.h`. This happens to compile on classic ESP32 (something in
-its header chain pulls it in transitively) but fails to compile for
-ESP32-C3. This is an upstream issue, unrelated to anything in this repo's
-own code.
+## Note on the `led_strip` managed component
 
-If a clean build fails with `'MALLOC_CAP_DEFAULT' undeclared` in
-`led_strip_spi_dev.c`, add this include near the top of that file (in
-`managed_components/espressif__led_strip/src/led_strip_spi_dev.c`):
-
-```c
-#include "esp_heap_caps.h"
-```
-
-Check first whether a newer `espressif/led_strip` release has fixed this
-upstream (the version pin is in `main/idf_component.yml`) before patching —
-it may no longer be necessary.
+`espressif/led_strip` v2.5.5 (pulled automatically into
+`managed_components/`, gitignored, redownloaded on a clean build) has
+`src/led_strip_spi_dev.c` use `MALLOC_CAP_*`/`heap_caps_calloc` without
+directly including `esp_heap_caps.h`. This was first seen as a hard build
+failure (`'MALLOC_CAP_DEFAULT' undeclared`), but turned out to be entangled
+with the broken IDF master snapshot above, not a standalone upstream bug:
+building against stable ESP-IDF v5.4, the same unpatched vendored file
+compiles cleanly (v5.4's header chain pulls in `esp_heap_caps.h`
+transitively where master's didn't). No patch needed on v5.4. If a clean
+build ever fails with that exact error again, add
+`#include "esp_heap_caps.h"` near the top of that file as a workaround,
+but treat it as a sign something's off with the IDF version in use first.

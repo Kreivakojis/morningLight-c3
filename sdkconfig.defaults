@@ -3,6 +3,11 @@
 # Serial flasher config
 CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
 
+# Console: C3 Super Mini has no separate USB-UART bridge chip, so the
+# native USB-Serial-JTAG peripheral (the same port used for flashing) is
+# the only practical console/log output.
+CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
+
 # Partition Table
 CONFIG_PARTITION_TABLE_CUSTOM=y
 CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions.csv"
